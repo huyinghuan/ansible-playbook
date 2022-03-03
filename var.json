@@ -1,5 +1,10 @@
 {
     "go_version": "1.17.7",
     "jdk_version": 11,
-    "host": "new"
+    "host": "tx2",
+    "frp_version": "0.30.0",
+    "frp_group": "frp",
+    "frp_server": "tx2",
+    "frp_client": "nuc",
+    "https_proxy": "http://127.0.0.1:8118"
 }

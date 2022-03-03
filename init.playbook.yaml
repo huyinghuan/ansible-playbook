@@ -3,6 +3,7 @@
 - name: 准备nodejs环境
   hosts: "{{ host }}"
   tags: [init, nodejs, pm2]
+  run_once: yes
   tasks:
     - name: 安装包
       dnf:

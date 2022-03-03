@@ -1,0 +1,65 @@
+---
+- name: frp 服务端
+  vars_files:
+    - var.json
+  hosts: "{{frp_group}}"
+  tasks:
+    - name: 下载
+      get_url:
+        url: https://github.com/fatedier/frp/releases/download/v{{frp_version}}/frp_{{frp_version}}_linux_amd64.tar.gz
+        dest: "{{ansible_env.HOME}}/frp_{{frp_version}}_linux_amd64.tar.gz"
+        mode: "0440"
+      when: inventory_hostname == frp_client
+      environment:
+        https_proxy: "{{https_proxy}}"
+      tags: [frpc]
+    - name: 下载到本地
+      run_once: no
+      fetch: src={{item}} dest=download/ flat=yes
+      vars:
+        item: "{{ansible_env.HOME}}/frp_{{frp_version}}_linux_amd64.tar.gz"
+      when: inventory_hostname == frp_client
+    - name: 在上传到远程服务器
+      copy: src={{item}} dest={{ansible_env.HOME}}/frp_{{frp_version}}_linux_amd64.tar.gz
+      vars:
+        item: "download/frp_{{frp_version}}_linux_amd64.tar.gz"
+      when: inventory_hostname != frp_client
+    - ansible.builtin.unarchive:
+        remote_src: yes
+        src: "{{ansible_env.HOME}}/frp_{{frp_version}}_linux_amd64.tar.gz"
+        dest: /opt
+        mode: 0655
+        list_files: yes
+      register: archive_contents
+      when: inventory_hostname == frp_server
+    - ansible.builtin.debug: var=archive_contents.files[0].split('/')[0]
+      when: inventory_hostname == frp_server
+    - ansible.builtin.command: mv /opt/{{archive_contents.files[0].split('/')[0]}} /opt/frp
+      when: inventory_hostname == frp_server
+# 文件复制
+# https://www.middlewareinventory.com/blog/how-to-copy-files-between-remote-servers-ansible-fetch-sync/
+# - hosts: app #方法一，先拉取文件到本地，再复制
+#  tasks:
+#     - name: Fetch the file from the mwiapp01 to master
+#       run_once: yes
+#       fetch: src=/tmp/app01-to-app02.jar dest=buffer/ flat=yes
+#       when: "{{ inventory_hostname == 'mwiapp01' }}"
+
+#     - name: Copy the file from master to mwiapp02
+#       copy: src=buffer/app01-to-app02.jar dest=/tmp/
+#       when: "{{ inventory_hostname == 'mwiapp02' }}"
+# - name: Sync Pull task - Executed on  the Destination host "{{groups['app'][1]}}" #方法二直接同步 必须在两者直接启用ssh登录
+#   hosts: "{{groups['app'][0]}}"
+#   user: wlsusr
+#   tasks:   
+#     - name: Copy the file from mwiapp01 to mwiapp02 using Method Pull
+#       tags: sync-pull
+#       synchronize:
+#         src: "{{ item }}"
+#         dest: "{{ item }}"
+#         mode: pull
+#       delegate_to: "{{groups['app'][1]}}"
+#       register: syncfile
+#       run_once: true
+#       with_items:
+#        - "/tmp/app01-to-app02.jar"
