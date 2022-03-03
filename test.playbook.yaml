@@ -1,0 +1,40 @@
+- name: golang 版本检查
+  hosts: "{{ host }}"
+  tags: [test]
+  tasks:
+    - ansible.builtin.shell:
+        cmd: go version
+        chdir: /root/
+      environment:
+        PATH: /usr/local/go/bin:{{ ansible_env.PATH }}
+      register: command_output
+    - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
+- name: nodejs 版本检查
+  hosts: "{{ host }}"
+  tags: [test]
+  tasks:
+    - ansible.builtin.shell: |
+        node --version
+        npm --version
+      register: command_output
+    - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
+- name: podman检查
+  hosts: "{{ host }}"
+  tags: [test]
+  tasks:
+    - ansible.builtin.shell: |
+        podman --version
+      register: command_output
+      tags: [test]
+    - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
+      tags: [test]
+- name: jdk检查
+  hosts: "{{ host }}"
+  tags: [test]
+  tasks:
+    - ansible.builtin.shell: |
+        java --version
+      register: command_output
+      tags: [test, jdk]
+    - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
+      tags: [test, jdk]
