@@ -6,7 +6,6 @@
   tasks:
     - ansible.builtin.shell:
         cmd: go version
-        chdir: /root/
       environment:
         PATH: /usr/local/go/bin:{{ ansible_env.PATH }}
       register: command_output

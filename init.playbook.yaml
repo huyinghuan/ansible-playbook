@@ -16,6 +16,8 @@
 - name: 准备golang
   hosts: "{{ host }}"
   tags: [golang, init]
+  become: yes
+  become_user: root
   tasks:
     - name: 下载安装包
       get_url:

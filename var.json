@@ -1,7 +1,7 @@
 {
-    "go_version": "1.17.7",
+    "go_version": "1.18",
     "jdk_version": 11,
-    "host": "tx2",
+    "host": "home",
     "frp_version": "0.30.0",
     "frp_group": "frp",
     "frp_server": "tx2",

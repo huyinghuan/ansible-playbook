@@ -11,3 +11,9 @@ ansible-galaxy collection install community.general
 ```
 ansible-playbook init.playbook.yml --tags init -e "@var.json"
 ```
+
+## 提权
+
+```
+-K, --ask-become-pass: ask for privilege escalation password
+```
