@@ -1,0 +1,23 @@
+# 配置git环境
+- name: git-ssh 配置
+  hosts: "{{ host }}"
+  tasks:
+    - name: 创建.ssh文件夹
+      file:
+        path: "{{ansible_env.HOME}}/.ssh"
+        state: directory
+        mode: 0744
+    - name: 配置拷贝
+      copy:
+          src: "{{item.src}}"
+          dest: "{{item.dest}}"
+          mode: 0644
+          force: yes
+      loop:
+          - { src: "config/ssh/config", dest: "{{ansible_env.HOME}}/.ssh/config" }
+          - { src: "config/ssh/id_rsa_git", dest: "{{ansible_env.HOME}}/.ssh/id_rsa_git" }
+    - name: 测试
+      shell: "ssh {{git}}"
+      register: result
+    - ansible.builtin.debug:
+          msg: "{{result.stdout_lines}}"

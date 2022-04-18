@@ -1,0 +1,10 @@
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_rsa_git
+    StrictHostKeyChecking no
+Host git.imgo.tv
+    HostName git.imgo.tv
+    User git
+    IdentityFile ~/.ssh/id_rsa_git
+    StrictHostKeyChecking no
