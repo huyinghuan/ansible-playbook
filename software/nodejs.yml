@@ -1,0 +1,33 @@
+- name: 准备nodejs环境
+  hosts: "{{ host }}"
+  tags: [init, nodejs]
+  run_once: yes
+  tasks:
+    - name: 安装包
+      dnf:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+          - nodejs
+          - npm
+    - ansible.builtin.shell: |
+        node --version
+        npm --version
+      register: command_output
+      tags: [nodejs]
+    - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
+      tags: [nodejs]
+- name: nodejs全局包
+  hosts: "{{ host }}"
+  tasks:
+    - name: 额外包
+      community.general.npm:
+        name: "{{item}}"
+        global: yes
+        registry: https://registry.npmmirror.com
+      loop:
+        - pm2
+        - cnpm
+      tags:
+        - node_modules

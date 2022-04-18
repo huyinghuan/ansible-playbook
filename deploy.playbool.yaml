@@ -1,0 +1,92 @@
+### 部署服务模版
+### host 执行服务器
+### project github的项目名称，如 huyinghuan/homework
+### projectName 用来配置进程名
+- name: 服务部署环境准备
+  hosts: "{{host}}"
+  vars:
+    gitServer: git@github.com
+    sourcedir: /data/source #源代码
+    build: /data/build
+    runtime: /data/service/
+    #project: huyinghuan/homework
+    #projectName: homework
+  tasks:
+    - name: 创建文件夹
+      ansible.builtin.file:
+        path: "{{item}}"
+        state: directory
+        mode: "0777"
+      loop:
+        - "{{sourcedir}}"
+        - "{{build}}"
+        - "{{runtime}}/{{projectName}}"
+    - name: 还原文件变动
+      shell: |
+        if [ -d {{sourcedir}}/{{projectName}}/.git ]; then 
+          cd {{sourcedir}}/{{projectName}}
+          git reset --hard
+        fi
+    - name: git
+      git:
+        repo: "{{gitServer}}/{{project}}.git"
+        dest: "{{sourcedir}}/{{projectName}}"
+        single_branch: yes
+        version: master
+    - name: build-golang
+      # DATETIME=$(date "+%Y%m%d%H%M%S")
+      # GITTAG=$(git describe --tags)
+      # LOCALCONF_HOME=xxxx
+      # buildTime="$LOCALCONF_HOME.BuildTime=${DATETIME}"
+      # gitTagFlag="$LOCALCONF_HOME.TAG=${GITTAG}"
+      # go build -ldflags="-X '$buildTime' -X '$gitTagFlag'" -o {{build}}/{{projectName}}_latest
+      shell: |
+        go mod tidy
+        go build -o {{build}}/{{projectName}}_latest
+      environment:
+        GO111MODULE: on
+        GOPROXY: https://mirrors.aliyun.com/goproxy/
+        PATH: /usr/local/go/bin:{{ ansible_env.PATH }}
+      args:
+        chdir: "{{sourcedir}}/{{projectName}}"
+      tags: [golang, gobuild]
+    # - name: build-nodejs
+    #   shell: |
+    #     npm install --registry=https://registry.npmmirror.com
+    #     npm run build
+    #   args:
+    #     chdir: "{{sourcedir}}/{{projectName}}"
+    #   tags: [nodejs, nodebuild]
+    - name: 删除进程
+      ansible.builtin.shell: |
+        if [ "$(pm2 id {{projectName}})" != "[]" ]; then pm2 delete {{projectName}}; fi
+    - name: 文件复制
+      copy:
+        src: "{{build}}/{{projectName}}_latest"
+        dest: "{{runtime}}/{{projectName}}/app"
+        remote_src: true
+        mode: 0777
+      tags: [golang, gobuild]
+    # - name: 配置文件复制
+    #   copy:
+    #     src: "configs/config.dev.yml"
+    #     dest: "{{runtime}}/{{projectName}}/configs/config.prod.yml"
+    #     mode: 0644
+    - name: pm2重启进程-go
+      ansible.builtin.shell: |
+        pm2 start app --name {{projectName}} -l start.log --interpreter none -- --env=prod
+        pm2 save
+      environment:
+        #GIN_MODE: release
+      args:
+        chdir: "{{runtime}}/{{projectName}}"
+      tags: [golang, gorun]
+    # - name: pm2重启进程-nodejs
+    #   ansible.builtin.shell: |
+    #     pm2 start index.js --name {{projectName}} -l start.log --interpreter none -- --env=prod
+    #     pm2 save
+    #   environment:
+    #     #GIN_MODE: release
+    #   args:
+    #     chdir: "{{runtime}}/{{projectName}}"
+    #   tags: [nodejs, noderun]

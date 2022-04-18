@@ -1,0 +1,19 @@
+- name: 容器环境
+  hosts: "{{ host }}"
+  tags: [init, podman]
+  tasks:
+    - name: 开发环境
+      dnf:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+          - podman
+          - podman-docker
+          - podman-compose
+    - ansible.builtin.shell: |
+        podman --version
+      register: command_output
+      tags: [podman]
+    - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
+      tags: [podman]

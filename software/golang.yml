@@ -1,0 +1,29 @@
+- name: 准备golang
+  hosts: "{{ host }}"
+  tags: [golang, init]
+  become: yes
+  become_user: root
+  tasks:
+    - name: 下载安装包
+      get_url:
+        url: https://golang.google.cn/dl/go{{ go_version }}.linux-amd64.tar.gz
+        dest: /root/golang{{ go_version }}.tar.gz
+        mode: "0440"
+    - name: 删除旧的安装
+      ansible.builtin.file:
+        path: /usr/local/go
+        state: absent
+      when:
+    - name: 解压安装
+      ansible.builtin.unarchive:
+        remote_src: yes
+        src: /root/golang{{ go_version }}.tar.gz
+        dest: /usr/local
+    - ansible.builtin.shell:
+        cmd: go version
+      environment:
+        PATH: /usr/local/go/bin:{{ ansible_env.PATH }}
+      register: command_output
+      tags: [golang]
+    - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
+      tags: [golang]

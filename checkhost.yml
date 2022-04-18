@@ -1,0 +1,10 @@
+- name: 测试服务连接性
+  hosts: "{{host}}"
+  tasks:
+    - name: 查看响应
+      shell: echo "hello {{ inventory_hostname }} - {{ ansible_default_ipv4.address }}"
+      register: result
+    - name: debug
+      debug:
+        var: result.stdout_lines
+        verbosity: 0

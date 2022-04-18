@@ -1,0 +1,17 @@
+- name: java
+  hosts: "{{ host }}"
+  tags: [jdk, init]
+  tasks:
+    - name: 安装
+      dnf:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+          - java-{{ jdk_version }}-openjdk
+    - ansible.builtin.shell: |
+        java --version
+      register: command_output
+      tags: [jdk]
+    - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
+      tags: [jdk]
