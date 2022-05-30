@@ -1,33 +1,37 @@
 - name: 准备nodejs环境
   hosts: "{{ host }}"
-  tags: [init, nodejs]
-  run_once: yes
+  become: yes
+  become_user: root
   tasks:
-    - name: 安装包
-      dnf:
-        name: "{{ packages }}"
-        state: latest
-      vars:
-        packages:
-          - nodejs
-          - npm
+    - name: 下载包
+      get_url:
+        url: "https://nodejs.org/dist/{{node_version}}/node-{{node_version}}-linux-x64.tar.xz"
+        dest: "/tmp/node-{{ node_version }}.tar.gz"
+        mode: "0440"
+        # https://nodejs.org/dist/v16.15.0/node-v16.15.0-linux-x64.tar.xz
+    - name: 解压安装
+      ansible.builtin.unarchive:
+        remote_src: yes
+        src: "/tmp/node-{{ node_version }}.tar.gz"
+        dest: /usr/local/lib/
+    - name: 配置环境变量
+      shell: |
+        echo 'export PATH=$PATH:/usr/local/lib/node-{{node_version}}-linux/bin' >> /etc/profile
+        source /etc/profile
     - ansible.builtin.shell: |
         node --version
         npm --version
       register: command_output
-      tags: [nodejs]
     - ansible.builtin.debug: var=command_output.stdout_lines verbosity=0
-      tags: [nodejs]
-- name: nodejs全局包
-  hosts: "{{ host }}"
-  tasks:
-    - name: 额外包
+    - name: 必备包
       community.general.npm:
         name: "{{item}}"
         global: yes
         registry: https://registry.npmmirror.com
       loop:
         - pm2
-        - cnpm
-      tags:
-        - node_modules
+    - name: pm2测试
+      shell: |
+        pm2 --version
+      register: result
+    - debug: var=result.stdout_lines verbosity=0
