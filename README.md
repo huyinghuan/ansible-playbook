@@ -40,3 +40,13 @@ ansible-playbook xxx/xxx/init.playbook.yml --tags init
 
 那么 init.playbook.yml 里面引入的本地相对路径是相对于 `/root/xxx/xxx`,而不是 `root`
 ```
+
+
+
+
+### 安装clash
+
+```
+ansible-playbook softerware/clash.yml -K -e 'localhost'
+```
+

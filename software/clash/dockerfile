@@ -1,0 +1,5 @@
+FROM ubuntu:latest
+WORKDIR /app
+ADD . ./
+EXPOSE 7890 7891 7892
+ENTRYPOINT [ "clash", "-f", "/etc/clash.yml", "-d", ".", "-ext-ui", "ui" ]

@@ -1,0 +1,62 @@
+- name: clash
+  hosts: 127.0.0.1
+  connection: local
+  vars:
+    install: "{{ansible_env.HOME}}/runtime/clash"
+    conf: "{{ansible_env.HOME}}/.local/etc/clash.yml"
+  tasks:
+    - file:
+        path: "{{install}}"
+        state: directory
+    - git:
+        repo: git@github.com:Dreamacro/clash.git
+        dest: /tmp/clash-client
+        single_branch: yes
+        force: true
+        depth: 1
+        version: master
+      tags: git
+    - git:
+        repo: git@github.com:Dreamacro/clash-dashboard.git
+        dest: /tmp/clash-ui
+        single_branch: yes
+        depth: 1
+        force: true
+        version: master
+      tags: git
+    - name: 编译clash
+      shell: |
+        go mod tidy
+        go build -o {{install}}/clash
+      environment:
+        GOPROXY: https://proxy.golang.com.cn,direct
+      args:
+        chdir: /tmp/clash-client
+    - name: 编译ui
+      shell: |
+        yarn --registry=https://registry.npmmirror.com
+        yarn build --outDir {{install}}/ui
+      args:
+        chdir: /tmp/clash-ui
+    - name: 安装
+      copy:
+        src: "{{item.src}}"
+        dest: "{{item.dest}}"
+        remote_src: "{{item.remote}}"
+      loop:
+        - src: ./Country.mmdb
+          dest: "{{install}}/Country.mmdb"
+          remote: false
+    - shell: pm2 start clash
+    - copy:
+        src: ./dockerfile
+        dest: "{{install}}/Dockerfile"
+      tags: docker
+    - shell: |
+        docker build . -t clash
+      tags: docker
+      args:
+        chdir: "{{install}}"
+    - shell: |
+        docker run clash -p 7890:7890 -p 7891:7891 -p 7892:7892 -v /etc/clash.yml:/etc/clash.yml -d
+      tags: docker
