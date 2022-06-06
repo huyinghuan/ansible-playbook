@@ -2,12 +2,13 @@
   hosts: 127.0.0.1
   connection: local
   vars:
-    install: "{{ansible_env.HOME}}/runtime/clash"
+    install: "{{ansible_env.HOME}}/software/clash"
     conf: "{{ansible_env.HOME}}/.local/etc/clash.yml"
   tasks:
     - file:
         path: "{{install}}"
         state: directory
+      tags: prepare
     - git:
         repo: git@github.com:Dreamacro/clash.git
         dest: /tmp/clash-client
@@ -15,7 +16,7 @@
         force: true
         depth: 1
         version: master
-      tags: git
+      tags: [git, prepare]
     - git:
         repo: git@github.com:Dreamacro/clash-dashboard.git
         dest: /tmp/clash-ui
@@ -23,8 +24,9 @@
         depth: 1
         force: true
         version: master
-      tags: git
+      tags: [git, prepare]
     - name: 编译clash
+      tags: [prepare]
       shell: |
         go mod tidy
         go build -o {{install}}/clash
@@ -33,12 +35,14 @@
       args:
         chdir: /tmp/clash-client
     - name: 编译ui
+      tags: [prepare]
       shell: |
         yarn --registry=https://registry.npmmirror.com
         yarn build --outDir {{install}}/ui
       args:
         chdir: /tmp/clash-ui
-    - name: 安装
+    - name: 复制必要文件
+      tags: [prepare]
       copy:
         src: "{{item.src}}"
         dest: "{{item.dest}}"
@@ -47,7 +51,12 @@
         - src: ./Country.mmdb
           dest: "{{install}}/Country.mmdb"
           remote: false
-    - shell: pm2 start clash
+    - name: pm2 启动
+      tags: [pm2]
+      shell: |
+        pm2 start clash --name clash --log clash.log -- -f {{conf}} -d . -ext-ui ui
+      args:
+        chdir: "{{install}}"
     - copy:
         src: ./dockerfile
         dest: "{{install}}/Dockerfile"
