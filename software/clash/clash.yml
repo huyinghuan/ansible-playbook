@@ -55,8 +55,11 @@
       tags: [pm2]
       shell: |
         pm2 start clash --name clash --log clash.log -- -f {{conf}} -d . -ext-ui ui
+        pm2 list
       args:
         chdir: "{{install}}"
+      register: debug
+    - debug: msg={{debug.stdout_lines}}
     - copy:
         src: ./dockerfile
         dest: "{{install}}/Dockerfile"

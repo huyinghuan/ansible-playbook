@@ -47,7 +47,13 @@ ansible-playbook xxx/xxx/init.playbook.yml --tags init
 ### 安装clash
 
 本地使用 `pm2` 管理
+
 ```
-ansible-playbook softerware/clash/clash.yml --skip-tags docker
+ansible-playbook software/clash/clash.yml --skip-tags docker
 ```
 
+本地使用 `docker` 启动：
+
+```
+ansible-playbook software/clash/clash.yml --skip-tags pm2
+```
